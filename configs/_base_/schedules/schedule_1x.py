@@ -1,6 +1,6 @@
 # evaluation
 evaluation = dict(interval=1,
-                  # save_best='auto',
+                  save_best='auto',
                   metric='mAP')
 # optimizer
 optimizer = dict(type='SGD', lr=0.0025, momentum=0.9, weight_decay=0.0001)

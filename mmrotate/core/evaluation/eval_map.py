@@ -62,7 +62,6 @@ def tpfp_default(det_bboxes,
             raise NotImplementedError
         return tp, fp
 
-
     ious = box_iou_rotated(
         torch.from_numpy(det_bboxes).float(),
         torch.from_numpy(gt_bboxes).float()).numpy()
@@ -220,7 +219,7 @@ def get_cls_results(det_results, annotations, class_id):
             cls_gts_ignore.append(ann['bboxes_ignore'][ignore_inds, :])
 
         else:
-            cls_gts_ignore.append(torch.zeros((0, 6), dtype=torch.float64))
+            cls_gts_ignore.append(torch.zeros((0, 5), dtype=torch.float64)) #这里作者代码给的是6
 
     return cls_dets, cls_gts, cls_gts_ignore
 

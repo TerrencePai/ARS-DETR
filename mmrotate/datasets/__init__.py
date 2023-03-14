@@ -8,6 +8,7 @@ from .dota15 import DOTA15Dataset
 from .sku import SKUDataset
 from .dior_r import DIOR_RDataset
 from .OHD_SJTU import OHD_SJTUDataset
+from .rsdd import RSDDDataset
 
-__all__ = ['SARDataset', 'DOTADataset', 'build_dataset', 'HRSCDataset',
+__all__ = ['SARDataset', 'DOTADataset', 'build_dataset', 'HRSCDataset', 'RSDDDataset',
            'DOTA15Dataset', 'SKUDataset', 'DIOR_RDataset', 'OHD_SJTUDataset']
