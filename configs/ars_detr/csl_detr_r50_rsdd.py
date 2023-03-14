@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+
 angle_version = 'le90'
 _base_ = [
     '../_base_/datasets/rsdd.py', '../_base_/schedules/schedule_1x.py',
     '../_base_/default_runtime.py'
 ]
 model = dict(
-    type='RotatedDeformableDETR',
+    type='ARSDETR',
     backbone=dict(
         type='ResNet',
         depth=50,
@@ -25,15 +26,21 @@ model = dict(
         norm_cfg=dict(type='GN', num_groups=32),
         num_outs=4),
     bbox_head=dict(
-        type='RotatedDeformableDETRHead',
+        type='ARSDeformableDETRHead',
         num_query=300,
         num_classes=1,
         in_channels=2048,
         sync_cls_avg_factor=True,
-        as_two_stage=True,
         with_box_refine=True,
+        as_two_stage=True,
+        angle_coder=dict(
+            type='CSLCoder',
+            angle_version=angle_version,
+            omega=1,
+            window='gaussian',
+            radius=6),
         transformer=dict(
-            type='RotatedDeformableDetrTransformer',
+            type='ARSRotatedDeformableDetrTransformer',
             two_stage_num_proposals=300,
             encoder=dict(
                 type='DetrTransformerEncoder',
@@ -46,7 +53,7 @@ model = dict(
                     ffn_dropout=0.1,
                     operation_order=('self_attn', 'norm', 'ffn', 'norm'))),
             decoder=dict(
-                type='RotatedDeformableDetrTransformerDecoder',
+                type='ARSRotatedDeformableDetrTransformerDecoder',
                 num_layers=6,
                 return_intermediate=True,
                 transformerlayers=dict(
@@ -77,7 +84,7 @@ model = dict(
             edge_swap=True,
             proj_xy=True,
             target_means=(.0, .0, .0, .0, .0),
-            target_stds=(0.1, 0.1, 0.2, 0.2, 0.1)),
+            target_stds=(1, 1, 1, 1, 1)),
         loss_cls=dict(
             type='FocalLoss',
             use_sigmoid=True,
@@ -85,25 +92,28 @@ model = dict(
             alpha=0.25,
             loss_weight=2.0),
         loss_bbox=dict(type='L1Loss', loss_weight=2.0),
+        loss_iou=dict(type='GIoULoss', loss_weight=5.0),
         reg_decoded_bbox=True,
-        loss_iou=dict(type='RotatedIoULoss', loss_weight=5.0),
+        loss_angle=dict(
+            type='CrossEntropyLoss', use_sigmoid=True, loss_weight=2.0),
     ),
     # training and testing settings
     train_cfg=dict(
         assigner=dict(
-            type='Rotated_HungarianAssigner',
+            type='ARS_HungarianAssigner',
             cls_cost=dict(type='FocalLossCost', weight=2.0),
-            reg_cost=dict(type='RBBoxL1Cost', weight=2.0, box_format='xywha'),
-            iou_cost=dict(type='RotatedIoUCost', iou_mode='iou', weight=5.0)
+            reg_cost=dict(type='BBoxL1Cost', weight=2.0, box_format='xywh'),
+            iou_cost=dict(type='IoUCost', iou_mode='giou', weight=5.0),
+            angle_cost=dict(type='CrossEntropyLossCost', weight=2.0)
         )),
-    test_cfg=dict(max_per_img=100) # 论文为空
+    test_cfg=dict()
 )
-
 data_root = 'data/rsdd/'
 data = dict(
     train=dict(ann_file= data_root + 'ImageSets/train.txt', filter_empty_gt=False, version=angle_version),
     val=dict(version=angle_version),
     test=dict(version=angle_version))
+
 optimizer = dict(
     _delete_=True,
     type='AdamW',
@@ -116,12 +126,13 @@ optimizer = dict(
             'sampling_offsets': dict(lr_mult=0.1),
             'reference_points': dict(lr_mult=0.1)
         }))
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(policy='step', step=[32])
 runner = dict(type='EpochBasedRunner', max_epochs=36)
-# evaluation = dict(interval=1,
-#                   save_best='auto',
-#                   metric='mAP')
-# checkpoint_config = dict(interval=1)
+checkpoint_config = dict(interval=1)
+evaluation = dict(interval=1,
+                  save_best='auto',
+                  metric='mAP')
 find_unused_parameters = True
 
