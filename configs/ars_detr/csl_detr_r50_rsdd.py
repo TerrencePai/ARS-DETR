@@ -130,7 +130,7 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(policy='step', step=[32])
 runner = dict(type='EpochBasedRunner', max_epochs=36)
-checkpoint_config = dict(interval=1)
+checkpoint_config = dict(interval=12)
 evaluation = dict(interval=1,
                   save_best='auto',
                   metric='mAP')
